@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Моя музыка</title><link rel="manifest" href="manifest.webmanifest"><link rel="apple-touch-icon" href="icon.png"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Музыка"><meta name="theme-color" content="#0d0d14">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{--bg:#f4f3fa;--cd:#fff;--tx:#16161f;--mu:#6d6d82;--ac:#7c3aed;--ln:#0000001a;color-scheme:light;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#0d0d14;--cd:#181825;--tx:#f2f2f8;--mu:#8e8ea8;--ln:#ffffff1a;color-scheme:dark}}
+:root[data-theme=dark]{--bg:#0d0d14;--cd:#181825;--tx:#f2f2f8;--mu:#8e8ea8;--ln:#ffffff1a;color-scheme:dark}
+body{background:var(--bg);color:var(--tx);font:15px/1.4 system-ui,sans-serif;max-width:640px;margin:auto;padding:16px 14px 270px}
+[hidden]{display:none!important}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+header{display:flex;justify-content:space-between;align-items:center}
+h1{font-size:26px;background:linear-gradient(90deg,var(--ac),#f472b6);-webkit-background-clip:text;background-clip:text;color:transparent}
+.dots{display:flex;align-items:center}.dots button{width:20px;height:20px;border-radius:50%;margin-left:8px;border:2px solid var(--ln)}
+#st{color:var(--mu);margin:2px 0}
+.add{display:block;margin:14px 0;padding:16px;border-radius:16px;text-align:center;font-weight:600;color:#fff;background:linear-gradient(135deg,var(--ac),#f472b6);cursor:pointer}
+.tabs{display:flex;gap:6px;background:var(--cd);padding:4px;border-radius:14px}
+.tabs button{flex:1;padding:9px;border-radius:10px}.tabs .on{background:var(--ac);color:#fff}
+input[type=text],input[type=search]{width:100%;margin:10px 0;padding:11px 14px;border-radius:12px;border:1px solid var(--ln);background:var(--cd);color:var(--tx);font:inherit}
+.row{display:flex;gap:8px;align-items:center}.row input{margin:6px 0}.row button{padding:9px 14px;border-radius:12px;background:var(--cd);white-space:nowrap}
+#pc button{padding:6px 12px;margin:8px 6px 0 0;border-radius:20px;background:var(--cd)}#pc .on{background:var(--ac);color:#fff}
+ul{list-style:none}
+li{display:flex;align-items:center;gap:4px;padding:8px;border-radius:14px;cursor:pointer}
+li.cur{background:var(--cd);outline:2px solid var(--ac)}
+li i,.disc{width:44px;height:44px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 13px #0002}
+li b{flex:1;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-left:8px}
+li small{color:var(--mu)}li button{padding:8px;font-size:18px}
+#em{text-align:center;color:var(--mu);padding:24px 8px}
+.pl{position:fixed;left:0;right:0;bottom:0;max-width:640px;margin:auto;background:var(--cd);border-radius:22px 22px 0 0;padding:14px 16px calc(12px + env(safe-area-inset-bottom,0px));box-shadow:0 -8px 30px #0003}
+.top{display:flex;align-items:center;gap:12px}.top div{flex:1;min-width:0}
+.top b{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.top small{color:var(--mu)}
+.top button{font-size:22px;color:var(--mu)}
+input[type=range]{width:100%;accent-color:var(--ac);margin:10px 0}
+.ctl{display:flex;justify-content:space-around;align-items:center}.ctl button{font-size:24px;padding:8px;color:var(--mu)}
+.ctl .big{width:60px;height:60px;border-radius:50%;background:var(--ac);color:#fff;font-size:26px}
+.ex{display:flex;justify-content:center;gap:10px}
+.ex button{font-size:13px;color:var(--mu);padding:4px 12px;border-radius:12px;border:1px solid var(--ln)}
+button.act{color:var(--ac)!important}
+canvas{width:100%;height:56px;display:block;margin-bottom:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.disc{animation:sp 6s linear infinite paused}.playing .disc{animation-play-state:running}
+.sheet{position:fixed;inset:0;background:#0008;display:flex;align-items:flex-end;z-index:9}
+.box{background:var(--cd);width:100%;max-width:640px;margin:auto;padding:18px;border-radius:22px 22px 0 0;max-height:80vh;overflow:auto}
+.box h3{margin-bottom:8px}.box>button{display:block;width:100%;text-align:left;padding:12px;border-radius:10px}.red{color:#ef4444}
+.hint{font-size:13px;margin-top:12px;color:var(--mu)}
+</style></head><body>
+<header><h1>♪ Моя музыка</h1><div class="dots" id="dots"><button id="th" title="Тема">◐</button></div></header>
+<p id="st"></p>
+<label class="add">＋ Добавить песни с телефона<input id="f" type="file" multiple hidden></label>
+<div class="tabs"><button data-t="all" class="on">Все</button><button data-t="fav">♥ Любимые</button><button data-t="pl">Плейлисты</button></div>
+<div id="pls" hidden><div id="pc"></div><div class="row"><input type="text" id="np" placeholder="Новый плейлист"><button id="nb">Создать</button><button id="dp" hidden>Удалить</button></div></div>
+<input type="search" id="s" placeholder="Поиск по названию…">
+<ul id="ls"></ul>
+<div id="em"></div>
+<div class="pl" id="pl">
+<canvas id="cv" hidden></canvas>
+<div class="top"><i class="disc" id="dc"></i><div><b id="tt">Выбери песню</b><small id="tm">0:00 / 0:00</small></div><button id="vz" title="Визуализатор">≋</button></div>
+<input type="range" id="sk" min="0" max="1000" value="0">
+<div class="ctl"><button id="shf">⇄</button><button id="pv">⏮</button><button class="big" id="pp">▶</button><button id="nx">⏭</button><button id="rp">↻</button></div>
+<div class="ex"><button id="sp">Скорость 1×</button><button id="sl">⏾ Таймер сна</button></div>
+</div>
+<div class="sheet" id="sh" hidden></div>
+<script>
+const $=s=>document.querySelector(s),E=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e};
+const esc=s=>s.replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const LS={g:k=>{try{return localStorage.getItem(k)}catch(e){return null}},s:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
+let db,T=[],cur=null,tab='all',plSel=null,shuf=0,rep=0,Q=[],ctx,an,tm,AC='#7c3aed',slI=0,spI=0,vzOn=0,PL=[];
+try{PL=JSON.parse(LS.g('pls')||'[]')}catch(e){}
+const A=new Audio(),SP=[1,1.25,1.5,0.75],SL=[0,15,30,60];
+const hue=n=>{let h=0;for(const c of n)h=(h*31+c.charCodeAt(0))%360;return h};
+const cv=n=>`background:linear-gradient(135deg,hsl(${hue(n)} 70% 55%),hsl(${(hue(n)+60)%360} 70% 45%))`;
+const fmt=s=>isFinite(s)?Math.floor(s/60)+':'+String(Math.floor(s%60)).padStart(2,'0'):'0:00';
+const tx=(m,f)=>new Promise((r,j)=>{const q=f(db.transaction('t',m).objectStore('t'));q.onsuccess=()=>r(q.result);q.onerror=()=>j(q.error)});
+const save=t=>tx('readwrite',s=>s.put(t));
+function setAc(c){AC=c;document.documentElement.style.setProperty('--ac',c);LS.s('ac',c)}
+['#7c3aed','#ec4899','#06b6d4','#22c55e','#f59e0b'].forEach(c=>{const b=E('button');b.style.background=c;b.onclick=()=>setAc(c);$('#dots').prepend(b)});
+if(LS.g('ac'))setAc(LS.g('ac'));
+$('#th').onclick=()=>{const d=document.documentElement,dark=d.dataset.theme?d.dataset.theme=='dark':matchMedia('(prefers-color-scheme:dark)').matches;d.dataset.theme=dark?'light':'dark'};
+
+function info(){
+  const t=T.find(x=>x.id==cur);
+  $('#tt').textContent=t?t.name:'Выбери песню';
+  $('#dc').style.cssText=t?cv(t.name):'background:var(--ln)';
+  $('#pp').textContent=A.paused?'▶':'⏸';
+  $('#pl').classList.toggle('playing',!A.paused);
+  $('#shf').classList.toggle('act',!!shuf);
+  $('#rp').classList.toggle('act',rep>0);$('#rp').textContent=rep==2?'🔂':'↻';
+  const mb=T.reduce((a,t)=>a+t.size,0)/1048576;
+  $('#st').textContent=T.length?`${T.length} песен · ${mb.toFixed(0)} МБ на этом устройстве`:'Пока пусто. Добавь первые песни';
+}
+function render(){
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t==tab));
+  $('#pls').hidden=tab!='pl';$('#dp').hidden=!plSel;
+  if(tab=='pl'){const p=$('#pc');p.innerHTML='';PL.forEach(n=>{const b=E('button',n==plSel?'on':'',esc(n));b.onclick=()=>{plSel=plSel==n?null:n;render()};p.append(b)})}
+  const q=$('#s').value.toLowerCase();
+  const L=T.filter(t=>(tab=='all'||(tab=='fav'&&t.fav)||(tab=='pl'&&plSel&&t.pl.includes(plSel)))&&t.name.toLowerCase().includes(q));
+  Q=L.map(t=>t.id);const ul=$('#ls');ul.innerHTML='';
+  L.forEach(t=>{
+    const li=E('li',t.id==cur?'cur':'',`<i style="${cv(t.name)}"></i><b>${esc(t.name)}</b><small>${(t.size/1048576).toFixed(1)} МБ</small>`);
+    const h=E('button','',t.fav?'♥':'♡');h.onclick=async e=>{e.stopPropagation();t.fav=t.fav?0:1;await save(t);render()};
+    const m=E('button','','⋯');m.onclick=e=>{e.stopPropagation();sheet(t)};
+    li.append(h,m);li.onclick=()=>play(t.id);ul.append(li)});
+  const em=$('#em');em.hidden=!!L.length;
+  em.innerHTML=T.length?(tab=='pl'&&!plSel?'Выбери плейлист или создай новый':'Ничего не найдено'):'Нажми «Добавить песни» и выбери аудиофайлы (mp3, m4a, flac…). Они сохранятся в памяти телефона и будут играть без интернета.<p class="hint">Установка: Android — меню ⋮ → «Установить приложение». iPhone — «Поделиться» → «На экран Домой».</p>';
+}
+function sheet(t){
+  const s=$('#sh');s.hidden=false;s.innerHTML='';
+  const b=E('div','box',`<h3>${esc(t.name)}</h3>`);
+  PL.forEach(p=>{const x=E('button','',(t.pl.includes(p)?'✓ ':'＋ ')+esc(p));x.onclick=async()=>{t.pl=t.pl.includes(p)?t.pl.filter(y=>y!=p):[...t.pl,p];await save(t);sheet(t);render()};b.append(x)});
+  const r=E('div','row','<input type="text" placeholder="Новый плейлист"><button>Создать</button>');
+  r.querySelector('button').onclick=()=>{const v=r.querySelector('input').value.trim();if(v&&!PL.includes(v)){PL.push(v);LS.s('pls',JSON.stringify(PL));sheet(t)}};
+  const d=E('button','red','🗑 Удалить песню');
+  d.onclick=async()=>{if(!d.dataset.s){d.dataset.s=1;d.textContent='Нажми ещё раз, чтобы удалить';return}
+    if(cur==t.id){A.pause();A.removeAttribute('src');cur=null}
+    await tx('readwrite',s=>s.delete(t.id));T=T.filter(y=>y.id!=t.id);s.hidden=true;render();info()};
+  b.append(r,d);s.append(b);s.onclick=e=>{if(e.target==s)s.hidden=true};
+}
+function play(id){
+  const t=T.find(x=>x.id==id);if(!t)return;cur=id;
+  if(A.src)URL.revokeObjectURL(A.src);
+  A.src=URL.createObjectURL(t.blob);A.defaultPlaybackRate=A.playbackRate=SP[spI];A.loop=rep==2;
+  A.play().catch(()=>{});initViz();info();render();
+  if('mediaSession' in navigator)navigator.mediaSession.metadata=new MediaMetadata({title:t.name,artist:'Моя музыка'});
+}
+function step(d){
+  if(!Q.length)return;let i=Q.indexOf(cur);
+  if(shuf&&Q.length>1){let j;do j=Math.floor(Math.random()*Q.length);while(j==i);i=j}
+  else{i+=d;if(i>=Q.length)i=0;if(i<0)i=Q.length-1}
+  play(Q[i]);
+}
+const toggle=()=>{if(cur==null){if(Q.length)play(Q[0]);return}A.paused?A.play():A.pause()};
+$('#pp').onclick=toggle;$('#nx').onclick=()=>step(1);$('#pv').onclick=()=>{if(A.currentTime>3)A.currentTime=0;else step(-1)};
+$('#shf').onclick=()=>{shuf=!shuf;info()};
+$('#rp').onclick=()=>{rep=(rep+1)%3;A.loop=rep==2;info()};
+$('#sp').onclick=()=>{spI=(spI+1)%4;A.defaultPlaybackRate=A.playbackRate=SP[spI];$('#sp').textContent='Скорость '+SP[spI]+'×'};
+$('#sl').onclick=()=>{slI=(slI+1)%4;clearTimeout(tm);const m=SL[slI];if(m)tm=setTimeout(()=>A.pause(),m*6e4);$('#sl').textContent=m?'⏾ Сон через '+m+' мин':'⏾ Таймер сна';$('#sl').classList.toggle('act',!!m)};
+$('#sk').oninput=e=>{if(A.duration)A.currentTime=e.target.value/1000*A.duration};
+A.ontimeupdate=()=>{if(A.duration)$('#sk').value=A.currentTime/A.duration*1000;$('#tm').textContent=fmt(A.currentTime)+' / '+fmt(A.duration)};
+A.onplay=A.onpause=info;
+A.onended=()=>{if(rep==2)return;if(!shuf&&rep==0&&Q.indexOf(cur)==Q.length-1){info();return}step(1)};
+if('mediaSession' in navigator){const m=navigator.mediaSession;
+  [['play',()=>A.play()],['pause',()=>A.pause()],['previoustrack',()=>step(-1)],['nexttrack',()=>step(1)],['seekto',e=>{A.currentTime=e.seekTime}]].forEach(([a,f])=>{try{m.setActionHandler(a,f)}catch(e){}})}
+document.addEventListener('keydown',e=>{if(/INPUT/.test(e.target.tagName)&&e.target.type!='range')return;
+  if(e.code=='Space'){e.preventDefault();toggle()}if(e.code=='ArrowRight')A.currentTime+=10;if(e.code=='ArrowLeft')A.currentTime-=10});
+
+function initViz(){
+  if(ctx||!vzOn)return;
+  try{ctx=new(window.AudioContext||window.webkitAudioContext)();an=ctx.createAnalyser();an.fftSize=64;ctx.createMediaElementSource(A).connect(an);an.connect(ctx.destination);draw()}catch(e){ctx=null}
+}
+function draw(){
+  requestAnimationFrame(draw);if(ctx.state=='suspended')ctx.resume();
+  const c=$('#cv');if(c.hidden)return;
+  const g=c.getContext('2d'),w=c.width=c.clientWidth*2,h=c.height=c.clientHeight*2,d=new Uint8Array(an.frequencyBinCount);
+  an.getByteFrequencyData(d);g.fillStyle=AC;const n=d.length-6,bw=w/n;
+  for(let i=0;i<n;i++){const v=d[i]/255*h;g.fillRect(i*bw+2,h-v,bw-4,v)}
+}
+$('#vz').onclick=()=>{vzOn=!vzOn;$('#cv').hidden=!vzOn;$('#vz').classList.toggle('act',!!vzOn);if(vzOn&&!A.paused&&!ctx){initViz()}};
+
+async function add(fs){
+  for(const f of fs){
+    if(/^(image|text)\//.test(f.type)||/\.(pdf|docx?|xlsx?|pptx?|png|jpe?g|txt|zip)$/i.test(f.name))continue;
+    const t={name:f.name.replace(/\.[^.]+$/,'').replace(/_+/g,' '),blob:f,size:f.size,fav:0,pl:[]};
+    t.id=await tx('readwrite',s=>s.add(t));T.push(t);
+  }
+  try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}
+  render();info();
+}
+$('#f').onchange=e=>{add(e.target.files);e.target.value=''};
+document.addEventListener('dragover',e=>e.preventDefault());
+document.addEventListener('drop',e=>{e.preventDefault();add(e.dataTransfer.files)});
+$('#s').oninput=render;
+document.querySelectorAll('.tabs button').forEach(b=>b.onclick=()=>{tab=b.dataset.t;render()});
+$('#nb').onclick=()=>{const v=$('#np').value.trim();if(v&&!PL.includes(v)){PL.push(v);plSel=v;LS.s('pls',JSON.stringify(PL));$('#np').value='';render()}};
+$('#dp').onclick=async()=>{for(const t of T)if(t.pl.includes(plSel)){t.pl=t.pl.filter(y=>y!=plSel);await save(t)}PL=PL.filter(p=>p!=plSel);LS.s('pls',JSON.stringify(PL));plSel=null;render()};
+
+const o=indexedDB.open('moya-muzyka',1);
+o.onupgradeneeded=()=>o.result.createObjectStore('t',{keyPath:'id',autoIncrement:true});
+o.onsuccess=async()=>{db=o.result;T=await tx('readonly',s=>s.getAll());render();info()};
+o.onerror=()=>{$('#st').textContent='Хранилище браузера недоступно (приватный режим?)'};
+render();info();
+if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
+</script></body></html>
